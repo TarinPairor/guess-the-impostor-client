@@ -6,10 +6,43 @@
     ></script>
   </head>
   <body>
-    <h1 x-data="{ message: 'I ❤️ Alpine' }" x-text="message"></h1>
-    <div x-data="{ visible: true }">
-      <div x-show="visible">This is visible</div>
-      <button x-on:click="visible = !visible">Toggle visibility</button>
+    <nav>
+      <a href="home.html">Home</a>
+      <a href="inbox.html">Inbox</a>
+      <a href="about.html">About</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+    <div id="content">
+      <!-- Content will be loaded here -->
     </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const contentDiv = document.getElementById("content");
+        const links = document.querySelectorAll("nav a");
+
+        function loadPage(url) {
+          fetch(url)
+            .then((response) => response.text())
+            .then((html) => {
+              contentDiv.innerHTML = html;
+            });
+        }
+
+        links.forEach((link) => {
+          link.addEventListener("click", function (event) {
+            event.preventDefault();
+            const url = this.getAttribute("href");
+            loadPage(url);
+            history.pushState(null, "", url);
+          });
+        });
+
+        window.addEventListener("popstate", function () {
+          loadPage(location.pathname.substring(1));
+        });
+
+        loadPage("home.html");
+      });
+    </script>
   </body>
 </html>
