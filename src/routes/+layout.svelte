@@ -6,7 +6,7 @@
 	import { initializeWebSocket } from '$lib/stores/websocket';
 
 	onMount(() => {
-		initializeWebSocket('ws://localhost:8080/?room=room1');
+		initializeWebSocket('wss://quackposter.onrender.com');
 	});
 </script>
 
