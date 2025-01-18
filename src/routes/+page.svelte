@@ -44,16 +44,16 @@
 	<section class="mx-auto max-w-6xl">
 		<!-- Hero Section -->
 		<div class="mb-16 flex flex-col items-center justify-center space-y-8">
-			<span class="welcome">
+			<!-- <span class="">
 				<picture class="relative block w-full">
 					<source srcset={welcome} type="image/webp" />
 					<img
 						src={welcomeFallback}
 						alt="Welcome"
-						class="h-auto w-full transform rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105"
+						class=" transform rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105"
 					/>
 				</picture>
-			</span>
+			</span> -->
 
 			<h1
 				class="bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-center text-6xl font-extrabold text-transparent md:text-7xl"
