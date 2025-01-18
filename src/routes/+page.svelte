@@ -3,8 +3,9 @@
 	import welcomeFallback from '$lib/images/svelte-welcome.png';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Table from '$lib/components/ui/table';
-	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import { Button } from '$lib/components/ui/button';
 	import { goto } from '$app/navigation';
+	import { Spring } from 'svelte/motion';
 
 	let rooms = {
 		room1: {
@@ -19,10 +20,18 @@
 
 	let open = false;
 	let response = 'Nothing yet.';
-	let newMembers = '';
+
+	const count = new Spring(3);
+	$: newMembers = Math.floor(count.current);
+
+	function modulo(n: number, m: number) {
+		return ((n % m) + m) % m;
+	}
 
 	function handleSubmit() {
-		goto('/game/1');
+		// Navigate to the game page with the room ID
+		goto(`/game/1`);
+		open = false; // Reset the dialog state after submission
 	}
 </script>
 
@@ -54,9 +63,10 @@
 		</div>
 
 		<!-- Rooms Section -->
-		<div class="rounded-xl bg-gray-800 p-8 shadow-xl">
+		<div class="rounded-xl bg-gray-800 p-8">
 			<div class="mb-8 flex flex-col items-center justify-between gap-3">
 				<h2 class="text-2xl font-bold text-purple-300">Available Rooms</h2>
+				<!-- Moved Button to center of the page -->
 				<Button
 					on:click={() => (open = true)}
 					class="transform rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2 font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-pink-600"
@@ -90,23 +100,49 @@
 	</section>
 
 	<!-- Create Room Dialog -->
-	<Dialog.Root {open} on:close={() => (open = false)}>
+	<Dialog.Root bind:open>
 		<Dialog.Content class="bg-gray-900 text-white sm:max-w-[425px]">
 			<Dialog.Header>
 				<Dialog.Title class="text-2xl font-bold text-purple-300">Create New Room</Dialog.Title>
 				<Dialog.Description class="text-gray-400">
-					Set up your game room parameters below.
+					Set number of players for your game room.
 				</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid gap-6 py-6">
-				<div class="grid grid-cols-4 items-center gap-4">
-					<label for="members" class="text-right text-gray-300">Members</label>
-					<input
-						id="members"
-						bind:value={newMembers}
-						class="col-span-3 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 outline-none transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-purple-500"
-					/>
+				<div class="flex flex-col items-center gap-4">
+					<label class="text-gray-300">Number of Players</label>
+					<div class="counter">
+						<button
+							on:click={() => (count.target = Math.max(2, count.target - 1))}
+							aria-label="Decrease the counter by one"
+							class="text-purple-300 transition-colors hover:text-purple-400"
+						>
+							<svg aria-hidden="true" viewBox="0 0 1 1" class="h-8 w-8">
+								<path d="M0,0.5 L1,0.5" />
+							</svg>
+						</button>
+
+						<div class="counter-viewport">
+							<div
+								class="counter-digits"
+								style="transform: translate(0, {100 * modulo(count.current, 1)}%)"
+							>
+								<strong class="hidden" aria-hidden="true">{Math.floor(count.current + 1)}</strong>
+								<strong>{Math.floor(count.current)}</strong>
+							</div>
+						</div>
+
+						<button
+							on:click={() => (count.target = Math.min(10, count.target + 1))}
+							aria-label="Increase the counter by one"
+							class="text-purple-300 transition-colors hover:text-purple-400"
+						>
+							<svg aria-hidden="true" viewBox="0 0 1 1" class="h-8 w-8">
+								<path d="M0,0.5 L1,0.5 M0.5,0 L0.5,1" />
+							</svg>
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -128,31 +164,64 @@
 </main>
 
 <style>
-	section {
+	.counter {
 		display: flex;
-		flex-direction: column;
-		justify-content: center;
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		margin: 1rem 0;
+	}
+
+	.counter button {
+		width: 2em;
+		padding: 0;
+		display: flex;
 		align-items: center;
-		flex: 0.6;
+		justify-content: center;
+		border: 0;
+		background-color: transparent;
+		touch-action: manipulation;
+		font-size: 2rem;
 	}
 
-	h1 {
-		width: 100%;
+	svg {
+		width: 25%;
+		height: 25%;
 	}
 
-	/* .welcome {
-		display: block;
+	path {
+		vector-effect: non-scaling-stroke;
+		stroke-width: 2px;
+		stroke: currentColor;
+	}
+
+	.counter-viewport {
+		width: 8em;
+		height: 4em;
+		overflow: hidden;
+		text-align: center;
 		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
 	}
 
-	.welcome img {
+	.counter-viewport strong {
+		position: absolute;
+		display: flex;
+		width: 100%;
+		height: 100%;
+		font-weight: 400;
+		color: theme('colors.purple.300');
+		font-size: 4rem;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.counter-digits {
 		position: absolute;
 		width: 100%;
 		height: 100%;
-		top: 0;
-		display: block;
-	} */
+	}
+
+	.hidden {
+		top: -100%;
+		user-select: none;
+	}
 </style>
