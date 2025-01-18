@@ -2,7 +2,7 @@
 </script>
 
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { writable } from 'svelte/store';
 
 	let inputValue = writable('');
@@ -31,8 +31,8 @@
 </script>
 
 <main class="p-4">
-	<h1 class="mb-4 bg-red-500 text-2xl font-bold">ID: {$page.params.id}</h1>
-	<p class="text-lg">Message: {$page.data.message}</p>
+	<h1 class="mb-4 bg-red-500 text-2xl font-bold">ID: {page.params.id}</h1>
+	<p class="text-lg">Message: {page.data.message}</p>
 
 	<div class="mt-4">
 		<input
