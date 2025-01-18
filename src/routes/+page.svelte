@@ -111,7 +111,7 @@
 
 			<div class="grid gap-6 py-6">
 				<div class="flex flex-col items-center gap-4">
-					<label class="text-gray-300">Number of Players</label>
+					<label for="number-of-players" class="text-gray-300">Number of Players</label>
 					<div class="counter">
 						<button
 							on:click={() => (count.target = Math.max(2, count.target - 1))}
@@ -123,7 +123,7 @@
 							</svg>
 						</button>
 
-						<div class="counter-viewport">
+						<div id="number-of-players" class="counter-viewport">
 							<div
 								class="counter-digits"
 								style="transform: translate(0, {100 * modulo(count.current, 1)}%)"
