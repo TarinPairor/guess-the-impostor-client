@@ -41,7 +41,7 @@
 </svelte:head>
 
 <main class="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-16 text-white">
-	<section class="mx-auto max-w-6xl">
+	<section class="mx-auto h-full max-w-6xl">
 		<!-- Hero Section -->
 		<div class="mb-16 flex flex-col items-center justify-center space-y-8">
 			<span class="welcome">
