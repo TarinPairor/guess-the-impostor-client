@@ -21,22 +21,7 @@
 	let response = 'Nothing yet.';
 	let newMembers = '';
 
-	function closeHandler(e: CustomEvent<{ action: string }>) {
-		switch (e.detail.action) {
-			case 'none':
-				response = "Ok, well, you're wrong.";
-				break;
-			case 'all':
-				response = 'You are correct. All dogs are the best dog.';
-				break;
-			default:
-				response = "It's a simple question. You should be able to answer it.";
-				break;
-		}
-	}
-
 	function handleSubmit() {
-		// Navigate to /game/1
 		goto('/game/1');
 	}
 </script>
@@ -46,57 +31,101 @@
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
-<section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcomeFallback} alt="Welcome" />
-			</picture>
-		</span>
-	</h1>
-	<p>Here are a list of rooms</p>
-	<button on:click={() => (open = true)}>Create</button>
-	<Table.Root>
-		<Table.Caption>A list of your recent invoices.</Table.Caption>
-		<Table.Header>
-			<Table.Row>
-				<Table.Head class="">Room ID</Table.Head>
-				<Table.Head>Members</Table.Head>
-			</Table.Row>
-		</Table.Header>
-		<Table.Body>
-			{#each Object.values(rooms) as room}
-				<Table.Row>
-					<Table.Cell>{room.room_id}</Table.Cell>
-					<Table.Cell>{room.members}</Table.Cell>
-				</Table.Row>
-			{/each}
-		</Table.Body>
-	</Table.Root>
+<main class="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-16 text-white">
+	<section class="mx-auto max-w-6xl">
+		<!-- Hero Section -->
+		<div class="mb-16 flex flex-col items-center justify-center space-y-8">
+			<span class="welcome">
+				<picture class="relative block w-full">
+					<source srcset={welcome} type="image/webp" />
+					<img
+						src={welcomeFallback}
+						alt="Welcome"
+						class="h-auto w-full transform rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105"
+					/>
+				</picture>
+			</span>
 
+			<h1
+				class="bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-center text-6xl font-extrabold text-transparent md:text-7xl"
+			>
+				Guess The Impostor
+			</h1>
+		</div>
+
+		<!-- Rooms Section -->
+		<div class="rounded-xl bg-gray-800 p-8 shadow-xl">
+			<div class="mb-8 flex flex-col items-center justify-between gap-3">
+				<h2 class="text-2xl font-bold text-purple-300">Available Rooms</h2>
+				<Button
+					on:click={() => (open = true)}
+					class="transform rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2 font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-pink-600"
+				>
+					Create Room
+				</Button>
+			</div>
+
+			<div class="overflow-hidden rounded-xl border border-gray-700">
+				<Table.Root>
+					<Table.Header>
+						<Table.Row class="bg-gray-900/50">
+							<Table.Head class="font-semibold text-purple-300">Room ID</Table.Head>
+							<Table.Head class="font-semibold text-purple-300">Members</Table.Head>
+						</Table.Row>
+					</Table.Header>
+					<Table.Body>
+						{#each Object.values(rooms) as room}
+							<Table.Row
+								class="cursor-pointer transition-colors duration-200 hover:bg-purple-900/20"
+								on:click={() => goto(`/game/${room.room_id}`)}
+							>
+								<Table.Cell class="font-medium">{room.room_id}</Table.Cell>
+								<Table.Cell>{room.members}</Table.Cell>
+							</Table.Row>
+						{/each}
+					</Table.Body>
+				</Table.Root>
+			</div>
+		</div>
+	</section>
+
+	<!-- Create Room Dialog -->
 	<Dialog.Root {open} on:close={() => (open = false)}>
-		<Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>Edit Profile</Dialog.Trigger>
-		<Dialog.Content class="sm:max-w-[425px]">
+		<Dialog.Content class="bg-gray-900 text-white sm:max-w-[425px]">
 			<Dialog.Header>
-				<Dialog.Title>Edit profile</Dialog.Title>
-				<Dialog.Description>
-					Make changes to your profile here. Click save when you're done.
+				<Dialog.Title class="text-2xl font-bold text-purple-300">Create New Room</Dialog.Title>
+				<Dialog.Description class="text-gray-400">
+					Set up your game room parameters below.
 				</Dialog.Description>
 			</Dialog.Header>
-			<div class="grid gap-4 py-4">
+
+			<div class="grid gap-6 py-6">
 				<div class="grid grid-cols-4 items-center gap-4">
-					<label for="members" class="text-right">Members</label>
-					<input id="members" bind:value={newMembers} class="col-span-3" />
+					<label for="members" class="text-right text-gray-300">Members</label>
+					<input
+						id="members"
+						bind:value={newMembers}
+						class="col-span-3 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 outline-none transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-purple-500"
+					/>
 				</div>
 			</div>
+
 			<Dialog.Footer>
-				<Button type="button" on:click={handleSubmit}>Save changes</Button>
+				<Button
+					type="button"
+					on:click={handleSubmit}
+					class="transform rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2 font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-pink-600"
+				>
+					Create Room
+				</Button>
 			</Dialog.Footer>
 		</Dialog.Content>
 	</Dialog.Root>
-	<pre class="status">Response: {response}</pre>
-</section>
+
+	{#if response !== 'Nothing yet.'}
+		<pre class="mt-4 rounded-lg bg-gray-800 p-4 text-gray-300">{response}</pre>
+	{/if}
+</main>
 
 <style>
 	section {
@@ -111,7 +140,7 @@
 		width: 100%;
 	}
 
-	.welcome {
+	/* .welcome {
 		display: block;
 		position: relative;
 		width: 100%;
@@ -125,5 +154,5 @@
 		height: 100%;
 		top: 0;
 		display: block;
-	}
+	} */
 </style>
