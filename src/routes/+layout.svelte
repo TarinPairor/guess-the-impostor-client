@@ -3,7 +3,7 @@
 	let { children } = $props();
 
 	import { onMount } from 'svelte';
-	import { initializeWebSocket } from '$lib/stores/websocket.ts';
+	import { initializeWebSocket } from '$lib/stores/websocket';
 
 	onMount(() => {
 		initializeWebSocket('ws://localhost:8080/?room=room1');

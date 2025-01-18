@@ -3,13 +3,14 @@ import { writable } from 'svelte/store';
 export const websocket = writable<WebSocket | null>(null);
 
 export function initializeWebSocket(url: string): WebSocket {
-	let existingWebSocket: WebSocket | null = null;
+	let existingWebSocket: WebSocket | null = null as WebSocket | null;
 
-	websocket.subscribe((ws) => {
+	const unsubscribe = websocket.subscribe((ws) => {
 		existingWebSocket = ws;
 	});
+	unsubscribe();
 
-	if (existingWebSocket && existingWebSocket.readyState === WebSocket.OPEN) {
+	if (existingWebSocket?.readyState === WebSocket.OPEN) {
 		console.log('WebSocket already initialized');
 		return existingWebSocket;
 	}
