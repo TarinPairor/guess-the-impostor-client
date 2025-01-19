@@ -6,17 +6,85 @@
 	import { Button } from '$lib/components/ui/button';
 	import { goto } from '$app/navigation';
 	import { Spring } from 'svelte/motion';
+	import { onMount, onDestroy } from 'svelte';
+	import { websocket } from '$lib/stores/websocket';
+	import { playerRole, playerWord } from '$lib/stores/playerStore';
 
-	let rooms = {
-		room1: {
-			members: 4,
-			room_id: 1
-		},
-		room2: {
-			members: 2,
-			room_id: 2
-		}
+	type Room = {
+		members: number;
+		room_id: string;
 	};
+
+	let socket: WebSocket | null = null;
+	let messages: string[] = [];
+	let rooms: Record<string, Room>;
+	let joiningRoom: Room;
+
+	$: if ($websocket) {
+		socket = $websocket;
+		socket.addEventListener('message', (event: MessageEvent) => {
+			try {
+				let msgData = JSON.parse(event.data);
+				if (msgData.action == 'getRooms') {
+					rooms = msgData.data.reduce(
+						(acc: Record<string, Room>, room: { id: string; members: number }, index: number) => {
+							acc[`room${index + 1}`] = {
+								members: room.members,
+								room_id: room.id
+							};
+							return acc;
+						},
+						{}
+					);
+					console.log(rooms);
+				}
+				if (msgData.action == 'createRoom') {
+					const match = msgData.msg.match(/Room (\d+)/);
+					if (match) {
+						const roomNumber = match[1];
+						playerRole.set(1);
+						goto(`/game/` + roomNumber);
+					}
+					open = false;
+				}
+				if (msgData.action == 'joinRoom') {
+					console.log('Joining Room...');
+					playerRole.set(joiningRoom.members + 1);
+					goto(`/game/` + joiningRoom.room_id);
+				}
+				if (msgData.action == 'sendWord') {
+					playerWord.set(msgData.word);
+				}
+			} catch (e) {
+				console.log(e);
+			}
+		});
+	}
+
+	onDestroy(() => {
+		if (socket) {
+			socket.removeEventListener('message', () => {});
+		}
+	});
+
+	onMount(() => {
+		if (socket) {
+			// Check if the socket is already open
+			if (socket.readyState === WebSocket.OPEN) {
+				sendGetRoomMessage();
+			} else {
+				// Wait for the socket to open
+				socket.addEventListener('open', sendGetRoomMessage, { once: true });
+			}
+		}
+
+		function sendGetRoomMessage() {
+			if (socket && socket.readyState === WebSocket.OPEN) {
+				const message = { action: 'getRoom', id: null };
+				socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+			}
+		}
+	});
 
 	let open = false;
 	let response = 'Nothing yet.';
@@ -30,8 +98,21 @@
 
 	function handleSubmit() {
 		// Navigate to the game page with the room ID
-		goto(`/game/1`);
-		open = false; // Reset the dialog state after submission
+		console.log('Creating Room...');
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			const message = { action: 'createRoom', roomId: 'null' };
+			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+		}
+		// goto(`/game/1`);
+		// open = false; // Reset the dialog state after submission
+	}
+
+	function handleJoin(room: Room) {
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			joiningRoom = room;
+			const message = { action: 'joinRoom', roomId: room.room_id };
+			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+		}
 	}
 </script>
 
@@ -43,7 +124,7 @@
 sdf
 
 <main class="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-16 text-white">
-	<section class="mx-auto max-w-6xl">
+	<section class="mx-auto h-full max-w-6xl">
 		<!-- Hero Section -->
 		<div class="mb-16 flex flex-col items-center justify-center space-y-8">
 			<!-- <span class="">
@@ -77,27 +158,31 @@ sdf
 				</Button>
 			</div>
 
-			<div class="overflow-hidden rounded-xl border border-gray-700">
-				<Table.Root>
-					<Table.Header>
-						<Table.Row class="bg-gray-900/50">
-							<Table.Head class="font-semibold text-purple-300">Room ID</Table.Head>
-							<Table.Head class="font-semibold text-purple-300">Members</Table.Head>
-						</Table.Row>
-					</Table.Header>
-					<Table.Body>
-						{#each Object.values(rooms) as room}
-							<Table.Row
-								class="cursor-pointer transition-colors duration-200 hover:bg-purple-900/20"
-								on:click={() => goto(`/game/${room.room_id}`)}
-							>
-								<Table.Cell class="font-medium">{room.room_id}</Table.Cell>
-								<Table.Cell>{room.members}</Table.Cell>
+			{#if rooms && Object.keys(rooms).length > 0}
+				<div class="overflow-hidden rounded-xl border border-gray-700">
+					<Table.Root>
+						<Table.Header>
+							<Table.Row class="bg-gray-900/50">
+								<Table.Head class="font-semibold text-purple-300">Room ID</Table.Head>
+								<Table.Head class="font-semibold text-purple-300">Members</Table.Head>
 							</Table.Row>
-						{/each}
-					</Table.Body>
-				</Table.Root>
-			</div>
+						</Table.Header>
+						<Table.Body>
+							{#each Object.values(rooms) as room}
+								<Table.Row
+									class="cursor-pointer transition-colors duration-200 hover:bg-purple-900/20"
+									on:click={() => handleJoin(room)}
+								>
+									<Table.Cell class="font-medium">{room.room_id}</Table.Cell>
+									<Table.Cell>{room.members}</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				</div>
+			{:else}
+				<p class="text-gray-400">No rooms available.</p>
+			{/if}
 		</div>
 	</section>
 
