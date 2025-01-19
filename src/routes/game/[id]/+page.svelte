@@ -22,6 +22,7 @@
 	let currentQuestion = '';
 	let role: number | null;
 	let currentWord: string | null = '';
+	let answers: string[] | null = null;
 
 	$: playerRole.subscribe((value) => (role = value));
 	$: playerWord.subscribe((value) => (currentWord = value));
@@ -42,12 +43,18 @@
 					console.log(msgData.question);
 					isFinalRound = msgData.isLastRound;
 					isGameStart = true;
+					setTimeout(() => {
+						getAnswer();
+					}, 15000);
 				}
 				if (msgData.action == 'joinAlert') {
 					numPlayers = numPlayers + 1;
 				}
 				if (msgData.action == 'sendWord') {
 					playerWord.set(msgData.word);
+				}
+				if (msgData.action == 'getAnswer') {
+					answers = msgData.answers;
 				}
 			} catch (e) {
 				console.log('Error');
@@ -70,7 +77,7 @@
 	function handleSubmit() {
 		console.log($inputValue);
 		if (socket && socket.readyState === WebSocket.OPEN) {
-			const message = { action: 'updateAnswerok', roomId: currentPageId, msg: $inputValue };
+			const message = { action: 'updateAnswer', roomId: currentPageId, msg: $inputValue };
 			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
 		}
 		inputValue.set('');
@@ -83,21 +90,29 @@
 			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
 		}
 	}
+
+	function getAnswer() {
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			const message = { action: 'getAnswer', roomId: currentPageId };
+			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+		}
+	}
 </script>
 
 <main class="h-screen bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-8 text-white">
-	<div class="flex justify-end p-4">
-		<!-- <button
-			disabled={numPlayers < 4} -->
-		<button
-			on:click={() => {
-				handleStart();
-			}}
-			class="ml-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
-		>
-			Start
-		</button>
-	</div>
+	{#if role == 1}
+		<div class="flex justify-end p-4">
+			<button
+				on:click={() => {
+					handleStart();
+				}}
+				disabled={numPlayers < 4}
+				class="ml-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
+			>
+				Start
+			</button>
+		</div>
+	{/if}
 	<div class="flex justify-end p-4">
 		<button
 			on:click={() => {
@@ -176,9 +191,11 @@
 					.map((_, i) => i + 1) as answerNumber, i}
 					<div class="flex h-full w-[25%] flex-col items-center">
 						{votes[i]}
-						<div class="items-center justify-center text-gray-300">
-							Answer {answerNumber}
-						</div>
+						{#if answers != null}
+							<div class="items-center justify-center text-gray-300">
+								{answers[i]}
+							</div>
+						{/if}
 					</div>
 				{/each}
 			</div>
