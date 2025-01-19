@@ -30,6 +30,8 @@
 
 	$: currentPageId = $page.params.id;
 
+	let votes = [0, 0, 0, 0];
+
 	$: if ($websocket) {
 		socket = $websocket;
 		socket.addEventListener('message', (event: MessageEvent) => {
@@ -162,12 +164,23 @@
 		</div>
 	{/if}
 	<div class="absolute inset-x-0 bottom-0 flex h-40 flex-col text-lg">
-		{#if isVoting}
+		{#if !isVoting}
 			<div class="flex h-16 flex-row">
-				<div class="w-[25%] text-center font-semibold text-purple-300">Answer 1</div>
+				<!-- <div class="w-[25%] text-center font-semibold text-purple-300">Answer 1</div>
 				<div class="w-[25%] text-center font-semibold text-purple-300">Answer 2</div>
 				<div class="w-[25%] text-center font-semibold text-purple-300">Answer 3</div>
-				<div class="w-[25%] text-center font-semibold text-purple-300">Answer 4</div>
+				<div class="w-[25%] text-center font-semibold text-purple-300">Answer 4</div> -->
+
+				{#each Array(4)
+					.fill(0)
+					.map((_, i) => i + 1) as answerNumber, i}
+					<div class="flex h-full w-[25%] flex-col items-center">
+						{votes[i]}
+						<div class="items-center justify-center text-gray-300">
+							Answer {answerNumber}
+						</div>
+					</div>
+				{/each}
 			</div>
 		{/if}
 		<div class="flex h-full flex-row">
