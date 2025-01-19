@@ -56,6 +56,9 @@
 				if (msgData.action == 'getAnswer') {
 					answers = msgData.answers;
 				}
+				if (msgData.action == 'getVotes') {
+					votes = msgData.votes;
+				}
 			} catch (e) {
 				console.log('Error');
 			}
@@ -72,6 +75,17 @@
 		console.log(`Selected option: ${selectedOption}`);
 		selectedOption = null;
 		isVoting = false;
+		if (socket && socket.readyState === WebSocket.OPEN && selectedOption != null) {
+			const message = {
+				action: 'updateVotes',
+				roomId: currentPageId,
+				playerIndex: selectedOption - 1
+			};
+			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+		}
+		setTimeout(() => {
+			getVotes();
+		}, 15000);
 	}
 
 	function handleSubmit() {
@@ -94,6 +108,13 @@
 	function getAnswer() {
 		if (socket && socket.readyState === WebSocket.OPEN) {
 			const message = { action: 'getAnswer', roomId: currentPageId };
+			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+		}
+	}
+
+	function getVotes() {
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			const message = { action: 'getVotes', roomId: currentPageId };
 			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
 		}
 	}
