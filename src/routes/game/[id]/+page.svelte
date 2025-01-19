@@ -2,28 +2,45 @@
 </script>
 
 <script lang="ts">
-	import { page } from '$app/state';
-	import { writable } from 'svelte/store';
+	import { page } from '$app/stores';
+	import { writable, get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
-	import { websocket } from '$lib/stores/websocket.ts';
+	import { websocket } from '$lib/stores/websocket';
 	import { goto } from '$app/navigation';
+	import { json } from '@sveltejs/kit';
+	import { playerRole } from '$lib/stores/playerStore';
 
+	let currentPageId: string;
 	let inputValue = writable('');
-	let formData = writable({});
-	let socketMessages = writable<string[]>([]);
 	let selectedOption: number | null = null;
 	let socket: WebSocket | null = null;
 	let messages: string[] = [];
 	const options = [1, 2, 3, 4];
 	let isGameStart = false;
 	let isVoting = false;
-	let numPlayers = 1;
+	let isFinalRound = false;
+	let currentQuestion = '';
+	let role: number | null;
+
+	$: playerRole.subscribe((value) => (role = value));
+
+	let numPlayers: number = get(playerRole) ?? 0;
+
+	$: currentPageId = $page.params.id;
 
 	$: if ($websocket) {
 		socket = $websocket;
 		socket.addEventListener('message', (event: MessageEvent) => {
-			console.log('Message received on game page xdd:', event.data);
-			messages = [...messages, event.data]; // Store received messages
+			try {
+				let msgData = JSON.parse(event.data);
+				if (msgData.action == 'startRound') {
+					currentQuestion = msgData.question;
+					isFinalRound = msgData.isLastRound;
+					isGameStart = true;
+				}
+			} catch (e) {
+				console.log('Error');
+			}
 		});
 	}
 
@@ -41,15 +58,30 @@
 
 	function handleSubmit() {
 		console.log($inputValue);
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			const message = { action: 'updateAnswerok', roomId: currentPageId, msg: $inputValue };
+			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+		}
 		inputValue.set('');
-		isVoting = true;
+		if (isFinalRound) isVoting = true;
+	}
+
+	function handleStart() {
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			const message = { action: 'startRound', roomId: currentPageId };
+			socket.send(JSON.stringify(message)); // Send a message to the WebSocket server
+		}
 	}
 </script>
 
 <main class="h-screen bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-8 text-white">
 	<div class="flex justify-end p-4">
+		<!-- <button
+			disabled={numPlayers < 4} -->
 		<button
-			disabled={numPlayers < 4}
+			on:click={() => {
+				handleStart();
+			}}
 			class="ml-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-pink-600 disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			Start
@@ -73,7 +105,7 @@
 		<div class="mt-20 flex flex-col items-center space-y-8">
 			<div class="text-3xl font-extrabold text-purple-300">
 				{#if !isVoting}
-					<span>Question: What is the name of the player?</span>
+					<span>{currentQuestion}</span>
 				{:else}
 					<span>Who do you think is the imposter?</span>
 				{/if}
@@ -130,26 +162,21 @@
 			</div>
 		{/if}
 		<div class="flex h-full flex-row">
-			<div
-				class="flex h-full w-[25%] items-center justify-center border border-gray-700 text-gray-300"
-			>
-				Player 1
-			</div>
-			<div
-				class="flex h-full w-[25%] items-center justify-center border border-gray-700 text-gray-300"
-			>
-				Me
-			</div>
-			<div
-				class="flex h-full w-[25%] items-center justify-center border border-gray-700 text-gray-300"
-			>
-				Player 3
-			</div>
-			<div
-				class="flex h-full w-[25%] items-center justify-center border border-gray-700 text-gray-300"
-			>
-				Waiting...
-			</div>
+			{#each Array(4)
+				.fill(0)
+				.map((_, i) => i + 1) as playerNumber}
+				<div
+					class="flex h-full w-[25%] items-center justify-center border border-gray-700 text-gray-300"
+				>
+					{#if playerNumber === role}
+						Me
+					{:else if playerNumber > numPlayers}
+						Waiting...
+					{:else}
+						Player {playerNumber}
+					{/if}
+				</div>
+			{/each}
 		</div>
 	</div>
 </main>
