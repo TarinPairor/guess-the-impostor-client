@@ -8,7 +8,7 @@
 	import { Spring } from 'svelte/motion';
 	import { onMount, onDestroy } from 'svelte';
 	import { websocket } from '$lib/stores/websocket';
-	import { playerRole } from '$lib/stores/playerStore';
+	import { playerRole, playerWord } from '$lib/stores/playerStore';
 
 	type Room = {
 		members: number;
@@ -51,6 +51,9 @@
 					console.log('Joining Room...');
 					playerRole.set(joiningRoom.members + 1);
 					goto(`/game/` + joiningRoom.room_id);
+				}
+				if (msgData.action == 'sendWord') {
+					playerWord.set(msgData.word);
 				}
 			} catch (e) {
 				console.log(e);

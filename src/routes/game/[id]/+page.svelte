@@ -8,7 +8,7 @@
 	import { websocket } from '$lib/stores/websocket';
 	import { goto } from '$app/navigation';
 	import { json } from '@sveltejs/kit';
-	import { playerRole } from '$lib/stores/playerStore';
+	import { playerRole, playerWord } from '$lib/stores/playerStore';
 
 	let currentPageId: string;
 	let inputValue = writable('');
@@ -21,8 +21,10 @@
 	let isFinalRound = false;
 	let currentQuestion = '';
 	let role: number | null;
+	let currentWord: string | null = '';
 
 	$: playerRole.subscribe((value) => (role = value));
+	$: playerWord.subscribe((value) => (currentWord = value));
 
 	let numPlayers: number = get(playerRole) ?? 0;
 
@@ -35,8 +37,15 @@
 				let msgData = JSON.parse(event.data);
 				if (msgData.action == 'startRound') {
 					currentQuestion = msgData.question;
+					console.log(msgData.question);
 					isFinalRound = msgData.isLastRound;
 					isGameStart = true;
+				}
+				if (msgData.action == 'joinAlert') {
+					numPlayers = numPlayers + 1;
+				}
+				if (msgData.action == 'sendWord') {
+					playerWord.set(msgData.word);
 				}
 			} catch (e) {
 				console.log('Error');
@@ -149,7 +158,7 @@
 			</div>
 		</div>
 		<div class="mt-12 h-12 w-full items-center justify-center text-center text-2xl">
-			Your word is <strong>Cringe</strong>
+			Your word is <strong>{currentWord}</strong>
 		</div>
 	{/if}
 	<div class="absolute inset-x-0 bottom-0 flex h-40 flex-col text-lg">
